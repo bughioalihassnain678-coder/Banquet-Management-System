@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Royal Palm Marquee & Banquet Management System</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        navy: {
+                            800: '#1e293b',
+                            900: '#0f172a',
+                            950: '#090d16',
+                        },
+                        royal: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                        },
+                        amberGold: {
+                            50: '#fffbe1',
+                            100: '#fef3c7',
+                            500: '#f59e0b',
+                            600: '#d97706',
+                            700: '#b45309',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- FontAwesome & Libraries -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f1f5f9; color: #334155; }
+        .sidebar-active { background-color: #2563eb; color: #ffffff !important; font-weight: 600; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.25); }
+        .fc-event { cursor: pointer; border-radius: 6px; padding: 3px 6px; border: none !important; font-weight: 600; font-size: 0.75rem; }
+        .fc-toolbar-title { font-size: 1.15rem !important; font-weight: 700; color: #0f172a; }
+        .fc-button-primary { background-color: #2563eb !important; border-color: #2563eb !important; text-transform: capitalize !important; font-size: 0.8rem !important; }
+        .fc-button-primary:hover { background-color: #1d4ed8 !important; }
+        
+        @media (max-width: 767px) {
+            #calendar-element .fc-toolbar { flex-wrap: wrap; gap: .5rem; }
+            #calendar-element .fc-toolbar-title { font-size: 1rem !important; }
+            #calendar-element .fc .fc-button { padding: .25rem .4rem; font-size: .72rem !important; }
+            #calendar-element .fc .fc-toolbar-chunk { display: flex; flex-wrap: wrap; gap: .25rem; }
+            #print-section { padding: 12px !important; }
+            #print-section table { font-size: 10px; }
+            #print-section th, #print-section td { padding: 5px !important; }
+        }
+        input, select, textarea, button { max-width: 100%; }
+        @media print {
+            body * { visibility: hidden; }
+            #print-section, #print-section * { visibility: visible; }
+            #print-section { position: absolute; left: 0; top: 0; width: 100%; background: white; z-index: 99999; padding: 20px; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col md:flex-row overflow-x-hidden">
+
+    <!-- SIDEBAR -->
+    <aside id="app-sidebar" class="w-full md:w-64 md:min-h-screen bg-navy-900 text-slate-300 flex flex-col flex-shrink-0 z-20 shadow-xl border-r border-slate-800">
+        <!-- Logo & Header -->
+        <div class="p-5 border-b border-slate-800/80 flex items-center space-x-3 bg-navy-950">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-royal-600 to-amberGold-500 flex items-center justify-center text-white shadow-md">
+                <i class="fa-solid fa-crown text-lg"></i>
+            </div>
+            <div>
+                <h1 id="app-settings-title" class="font-bold text-sm text-white leading-tight truncate w-40">Royal Palm Marquee</h1>
+                <p class="text-2xs text-amberGold-500 font-semibold tracking-wide uppercase">Banquet System</p>
+            </div>
+        </div>
+
+        <!-- Navigation Links -->
+        <nav id="main-nav" class="hidden md:block flex-1 overflow-y-auto py-4 px-3 space-y-1.5 text-xs">
+            <button onclick="switchView('dashboard')" id="side-dashboard" class="sidebar-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl transition text-slate-300 hover:bg-slate-800/60 hover:text-white">
+                <i class="fa-solid fa-chart-pie w-5 text-center text-sm"></i><span>Dashboard</span>
+            </button>
+            <button onclick="switchView('calendar')" id="side-calendar" class="sidebar-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl transition text-slate-300 hover:bg-slate-800/60 hover:text-white">
+                <i class="fa-solid fa-calendar-days w-5 text-center text-sm"></i><span>Booking Calendar</span>
+            </button>
+            <button onclick="switchView('new-booking')" id="side-new-booking" class="sidebar-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl transition text-slate-300 hover:bg-slate-800/60 hover:text-white">
+                <i class="fa-solid fa-square-plus w-5 text-center text-sm"></i><span>New Booking</span>
+            </button>
+            <button onclick="switchView('all-bookings')" id="side-all-bookings" class="sidebar-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl transition text-slate-300 hover:bg-slate-800/60 hover:text-white">
+                <i class="fa-solid fa-list-check w-5 text-center text-sm"></i><span>All Bookings</span>
+            </button>
+            <button onclick="switchView('customers')" id="side-customers" class="sidebar-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl transition text-slate-300 hover:bg-slate-800/60 hover:text-white">
+                <i class="fa-solid fa-users w-5 text-center text-sm"></i><span>Customers</span>
+            </button>
+            <button onclick="switchView('payments')" id="side-payments" class="sidebar-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl transition text-slate-300 hover:bg-slate-800/60 hover:text-white">
+                <i class="fa-solid fa-wallet w-5 text-center text-sm"></i><span>Payments & Accounts</span>
+            </button>
+            <button onclick="switchView('events')" id="side-events" class="sidebar-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl transition text-slate-300 hover:bg-slate-800/60 hover:text-white">
+                <i class="fa-solid fa-champagne-glasses w-5 text-center text-sm"></i><span>Events Schedule</span>
+            </button>
+            <button onclick="switchView('reports')" id="side-reports" class="sidebar-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl transition text-slate-300 hover:bg-slate-800/60 hover:text-white">
+                <i class="fa-solid fa-file-invoice-dollar w-5 text-center text-sm"></i><span>Reports & Analytics</span>
+            </button>
+            <button onclick="switchView('halls')" id="side-halls" class="sidebar-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl transition text-slate-300 hover:bg-slate-800/60 hover:text-white">
+                <i class="fa-solid fa-building-columns w-5 text-center text-sm"></i><span>Hall Management</span>
+            </button>
+            <button onclick="switchView('settings')" id="side-settings" class="sidebar-btn w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl transition text-slate-300 hover:bg-slate-800/60 hover:text-white">
+                <i class="fa-solid fa-sliders w-5 text-center text-sm"></i><span>Settings</span>
+            </button>
+        </nav>
+
+        <!-- Quick Info Footer -->
+        <div class="p-4 bg-navy-950/60 border-t border-slate-800 text-2xs text-slate-400">
+            <p class="font-semibold text-slate-300">System Ready</p>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <div class="flex-1 min-w-0 flex flex-col min-h-screen bg-slate-100">
+        <!-- Top Navigation Header -->
+        <header class="bg-white border-b border-slate-200/80 px-4 md:px-6 py-3.5 flex flex-wrap gap-3 justify-between items-center shadow-sm">
+            <button type="button" onclick="toggleMobileNav()" class="md:hidden px-3 py-2 rounded-lg border border-slate-300 text-slate-700" aria-label="Toggle navigation"><i class="fa-solid fa-bars"></i></button>
+            <div class="min-w-0 flex-1">
+                <h2 id="view-title" class="text-lg font-bold text-slate-800">Dashboard</h2>
+                <p class="text-xs text-slate-500">Real-time Banquet Hall Booking Overview</p>
+            </div>
+            <div class="flex items-center space-x-3">
+                <button onclick="switchView('new-booking')" class="bg-royal-600 hover:bg-royal-700 text-white font-bold text-xs px-4 py-2 rounded-lg shadow-sm transition flex items-center space-x-2">
+                    <i class="fa-solid fa-plus"></i><span>Create New Booking</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- VIEW WRAPPER -->
+        <main class="flex-1 min-w-0 overflow-y-auto p-3 sm:p-4 md:p-6 space-y-6">
+
+            <!-- 1. DASHBOARD VIEW -->
+            <div id="view-dashboard" class="app-view space-y-6">
+                <!-- KPI Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-bold text-slate-500 uppercase">Total Bookings</span>
+                            <span class="w-9 h-9 rounded-lg bg-royal-50 text-royal-600 flex items-center justify-center"><i class="fa-solid fa-calendar-check text-sm"></i></span>
+                        </div>
+                        <h3 id="stat-total-bk" class="text-2xl font-extrabold text-slate-800 mt-2">0</h3>
+                        <p class="text-xs text-slate-500 mt-1 font-medium">All registered functions</p>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-bold text-slate-500 uppercase">Upcoming Events</span>
+                            <span class="w-9 h-9 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center"><i class="fa-solid fa-clock text-sm"></i></span>
+                        </div>
+                        <h3 id="stat-upcoming-bk" class="text-2xl font-extrabold text-slate-800 mt-2">0</h3>
+                        <p class="text-xs text-slate-500 mt-1 font-medium">Next functions scheduled</p>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-bold text-slate-500 uppercase">Total Expected Revenue</span>
+                            <span class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center"><i class="fa-solid fa-money-bill-wave text-sm"></i></span>
+                        </div>
+                        <h3 id="stat-total-rev" class="text-2xl font-extrabold text-slate-800 mt-2">Rs. 0</h3>
+                        <p class="text-xs text-emerald-600 mt-1 font-medium"><i class="fa-solid fa-check-circle mr-1"></i>Confirmed Contracts</p>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-bold text-slate-500 uppercase">Pending Receivable</span>
+                            <span class="w-9 h-9 rounded-lg bg-amberGold-50 text-amberGold-600 flex items-center justify-center"><i class="fa-solid fa-hourglass-half text-sm"></i></span>
+                        </div>
+                        <h3 id="stat-pending-bal" class="text-2xl font-extrabold text-amberGold-600 mt-2">Rs. 0</h3>
+                        <p class="text-xs text-slate-500 mt-1 font-medium">Balance to collect</p>
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm lg:col-span-2">
+                        <h3 class="font-bold text-slate-800 text-sm mb-4">Monthly Revenue Flow (PKR)</h3>
+                        <div class="h-64"><canvas id="dash-chart-revenue"></canvas></div>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                        <h3 class="font-bold text-slate-800 text-sm mb-4">Event Type Distribution</h3>
+                        <div class="h-64 flex justify-center items-center"><canvas id="dash-chart-types"></canvas></div>
+                    </div>
+                </div>
+
+                <!-- Recent Bookings Table -->
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-800 text-sm">Recent & Upcoming Event Bookings</h3>
+                        <button onclick="switchView('all-bookings')" class="text-xs font-bold text-royal-600 hover:text-royal-700">View All</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-600 uppercase tracking-wider border-b border-slate-200">
+                                    <th class="p-3 pl-5">Booking ID</th>
+                                    <th class="p-3">Customer</th>
+                                    <th class="p-3">Event & Hall</th>
+                                    <th class="p-3">Date & Shift</th>
+                                    <th class="p-3">Guests</th>
+                                    <th class="p-3">Total Amount</th>
+                                    <th class="p-3">Status</th>
+                                    <th class="p-3 text-right pr-5">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dash-recent-table" class="divide-y divide-slate-100 text-slate-700">
+                                <!-- JS populated -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. BOOKING CALENDAR VIEW -->
+            <div id="view-calendar" class="app-view hidden space-y-4">
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <div id="calendar-element" class="min-w-0"></div>
+                </div>
+            </div>
+
+            <!-- 3. NEW BOOKING VIEW -->
+            <div id="view-new-booking" class="app-view hidden">
+                <div class="max-w-4xl mx-auto bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="bg-navy-900 text-white p-6 border-b border-slate-800">
+                        <h3 class="text-lg font-bold flex items-center"><i class="fa-solid fa-file-signature text-amberGold-500 mr-2.5"></i>Create New Banquet Booking</h3>
+                        <p class="text-xs text-slate-300 mt-1">Enter customer details, select venue hall, event pricing & log initial advance payment.</p>
+                    </div>
+
+                    <form id="new-booking-form" onsubmit="handleNewBookingSubmit(event)" class="p-6 space-y-6">
+                        <!-- Section 1: Customer Details -->
+                        <div>
+                            <h4 class="text-xs font-bold text-royal-600 uppercase tracking-wider mb-3 pb-1 border-b border-slate-200">1. Customer Details</h4>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Customer Full Name *</label>
+                                    <input type="text" id="nb-cust-name" required placeholder="e.g. Chaudhry Usman" class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-royal-500 outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Mobile Phone Number *</label>
+                                    <input type="tel" id="nb-cust-phone" required placeholder="e.g. 0300-1234567" class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-royal-500 outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">CNIC Number</label>
+                                    <input type="text" id="nb-cust-cnic" placeholder="e.g. 35202-1234567-1" class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-royal-500 outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Address / City</label>
+                                    <input type="text" id="nb-cust-address" placeholder="e.g. Model Town, Lahore" class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-royal-500 outline-none">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 2: Event Details -->
+                        <div>
+                            <h4 class="text-xs font-bold text-royal-600 uppercase tracking-wider mb-3 pb-1 border-b border-slate-200">2. Function & Venue Schedule</h4>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Event Function Type *</label>
+                                    <select id="nb-event-type" required class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-royal-500 outline-none bg-white">
+                                        <option value="Barat">Barat</option>
+                                        <option value="Walima">Walima</option>
+                                        <option value="Mehndi">Mehndi</option>
+                                        <option value="Nikkah / Engagement">Nikkah / Engagement</option>
+                                        <option value="Birthday Party">Birthday Party</option>
+                                        <option value="Corporate Event">Corporate Event</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Select Hall *</label>
+                                    <select id="nb-hall-id" required onchange="calculateNewBookingTotals()" class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-royal-500 outline-none bg-white">
+                                        <!-- JS populated -->
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Event Date *</label>
+                                    <input type="date" id="nb-event-date" required class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-royal-500 outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Shift / Time *</label>
+                                    <select id="nb-shift" required class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-royal-500 outline-none bg-white">
+                                        <option value="Day / Lunch (12:00 PM - 04:00 PM)">Day / Lunch (12:00 PM - 04:00 PM)</option>
+                                        <option value="Night / Dinner (07:00 PM - 11:00 PM)">Night / Dinner (07:00 PM - 11:00 PM)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Expected Guests Count *</label>
+                                    <input type="number" id="nb-guests" min="50" value="300" required oninput="calculateNewBookingTotals()" class="w-full text-xs p-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-royal-500 outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Menu Package Choice</label>
+                                    <input type="text" id="nb-menu-desc" value="Standard Chicken Biryani, Korma, Naan, Sweet" class="w-full text-xs p-2.5 rounded-lg border border-slate-300 outline-none">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 3: Financial Calculations -->
+                        <div>
+                            <h4 class="text-xs font-bold text-royal-600 uppercase tracking-wider mb-3 pb-1 border-b border-slate-200">3. Charges & Advance Payment (PKR)</h4>
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Hall Base Rent (PKR)</label>
+                                    <input type="number" id="nb-rent" value="60000" min="0" oninput="calculateNewBookingTotals()" class="w-full text-xs p-2.5 rounded-lg border border-slate-300 outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Per Head Food Rate (PKR)</label>
+                                    <input type="number" id="nb-per-head" value="1400" min="0" oninput="calculateNewBookingTotals()" class="w-full text-xs p-2.5 rounded-lg border border-slate-300 outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Decor & Stage Charges (PKR)</label>
+                                    <input type="number" id="nb-decor" value="30000" min="0" oninput="calculateNewBookingTotals()" class="w-full text-xs p-2.5 rounded-lg border border-slate-300 outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Tax / Service Charge (%)</label>
+                                    <input type="number" id="nb-tax-rate" value="5" min="0" max="30" oninput="calculateNewBookingTotals()" class="w-full text-xs p-2.5 rounded-lg border border-slate-300 outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Advance Payment Received (PKR)</label>
+                                    <input type="number" id="nb-advance" value="100000" min="0" oninput="calculateNewBookingTotals()" class="w-full text-xs p-2.5 rounded-lg border border-slate-300 outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Advance Payment Method</label>
+                                    <select id="nb-payment-method" class="w-full text-xs p-2.5 rounded-lg border border-slate-300 outline-none bg-white">
+                                        <option value="Cash">Cash</option>
+                                        <option value="Bank Transfer">Bank Transfer</option>
+                                        <option value="JazzCash">JazzCash</option>
+                                        <option value="Easypaisa">Easypaisa</option>
+                                        <option value="Cheque">Cheque</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Summary Card -->
+                            <div class="mt-4 p-4 bg-royal-50 border border-royal-100 rounded-xl flex flex-wrap justify-between items-center text-xs">
+                                <div>
+                                    <p class="text-slate-600">Calculated Food Total: <span id="nb-sum-food" class="font-bold text-slate-800">Rs. 0</span></p>
+                                    <p class="text-slate-600">Calculated Tax Amount: <span id="nb-sum-tax" class="font-bold text-slate-800">Rs. 0</span></p>
+                                </div>
+                                <div class="text-right">
+                                    <p class="text-base font-extrabold text-royal-700">Total Amount: <span id="nb-sum-total">Rs. 0</span></p>
+                                    <p class="text-xs font-bold text-amberGold-700">Remaining Balance: <span id="nb-sum-balance">Rs. 0</span></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="flex justify-end space-x-3 pt-3 border-t border-slate-200">
+                            <button type="button" onclick="switchView('dashboard')" class="px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg border border-slate-300">Cancel</button>
+                            <button type="submit" class="px-6 py-2.5 text-xs font-bold text-white bg-royal-600 hover:bg-royal-700 rounded-lg shadow transition"><i class="fa-solid fa-check mr-2"></i>Save Booking</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 4. ALL BOOKINGS VIEW -->
+            <div id="view-all-bookings" class="app-view hidden space-y-4">
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-wrap justify-between items-center gap-4">
+                    <div class="flex items-center space-x-3">
+                        <input type="text" id="ab-search" onkeyup="renderAllBookingsTable()" placeholder="Search ID or Customer..." class="text-xs p-2.5 rounded-lg border border-slate-300 outline-none w-64 focus:ring-2 focus:ring-royal-500">
+                        <select id="ab-status-filter" onchange="renderAllBookingsTable()" class="text-xs p-2.5 rounded-lg border border-slate-300 outline-none bg-white">
+                            <option value="All">All Statuses</option>
+                            <option value="Confirmed">Confirmed</option>
+                            <option value="Reserved">Reserved</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border-collapse">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-600 uppercase tracking-wider border-b border-slate-200">
+                                    <th class="p-3 pl-5">Booking ID</th>
+                                    <th class="p-3">Customer Info</th>
+                                    <th class="p-3">Event & Hall</th>
+                                    <th class="p-3">Date & Shift</th>
+                                    <th class="p-3">Total Amount</th>
+                                    <th class="p-3">Paid Advance</th>
+                                    <th class="p-3">Balance</th>
+                                    <th class="p-3">Status</th>
+                                    <th class="p-3 text-right pr-5">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="all-bookings-table-body" class="divide-y divide-slate-100 text-slate-700">
+                                <!-- JS populated -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. CUSTOMERS VIEW -->
+            <div id="view-customers" class="app-view hidden space-y-4">
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex justify-between items-center">
+                    <input type="text" id="cust-search" onkeyup="renderCustomersView()" placeholder="Search customer name or mobile..." class="text-xs p-2.5 rounded-lg border border-slate-300 outline-none w-64 focus:ring-2 focus:ring-royal-500">
+                </div>
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-x-auto">
+                    <table class="w-full min-w-[680px] text-left text-xs border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-600 uppercase border-b border-slate-200">
+                                <th class="p-3.5 pl-5">Customer Name</th>
+                                <th class="p-3.5">Mobile Phone</th>
+                                <th class="p-3.5">CNIC Number</th>
+                                <th class="p-3.5">Address</th>
+                                <th class="p-3.5">Bookings Count</th>
+                                <th class="p-3.5 text-right pr-5">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="customers-table-body" class="divide-y divide-slate-100">
+                            <!-- JS populated -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 6. PAYMENTS VIEW -->
+            <div id="view-payments" class="app-view hidden space-y-4">
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex justify-between items-center">
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-sm">Payment Transactions History</h3>
+                        <p class="text-xs text-slate-500">Record payments and installment receipts</p>
+                    </div>
+                    <button onclick="openPaymentModal()" class="bg-royal-600 hover:bg-royal-700 text-white font-bold text-xs px-4 py-2 rounded-lg shadow-sm transition">
+                        + Record Payment
+                    </button>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-x-auto">
+                    <table class="w-full min-w-[680px] text-left text-xs border-collapse">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-600 uppercase border-b border-slate-200">
+                                <th class="p-3.5 pl-5">Txn ID</th>
+                                <th class="p-3.5">Booking ID</th>
+                                <th class="p-3.5">Customer Name</th>
+                                <th class="p-3.5">Date</th>
+                                <th class="p-3.5">Method</th>
+                                <th class="p-3.5">Amount Paid</th>
+                                <th class="p-3.5 text-right pr-5">Print Slip</th>
+                            </tr>
+                        </thead>
+                        <tbody id="payments-table-body" class="divide-y divide-slate-100">
+                            <!-- JS populated -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 7. EVENTS VIEW -->
+            <div id="view-events" class="app-view hidden space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5" id="events-cards-grid">
+                    <!-- Today, Tomorrow, Upcoming Cards JS Populated -->
+                </div>
+            </div>
+
+            <!-- 8. REPORTS VIEW -->
+            <div id="view-reports" class="app-view hidden space-y-4">
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex justify-between items-center">
+                    <h3 class="font-bold text-slate-800 text-sm">Financial Statements & CSV Export</h3>
+                    <button onclick="exportCSVReport()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2 rounded-lg shadow-sm transition"><i class="fa-solid fa-file-excel mr-2"></i>Download CSV</button>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm text-center">
+                        <span class="text-xs font-bold text-slate-500 uppercase">Total Collected</span>
+                        <h3 id="rep-collected" class="text-2xl font-extrabold text-emerald-600 mt-1">Rs. 0</h3>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm text-center">
+                        <span class="text-xs font-bold text-slate-500 uppercase">Total Pending</span>
+                        <h3 id="rep-pending" class="text-2xl font-extrabold text-amberGold-600 mt-1">Rs. 0</h3>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm text-center">
+                        <span class="text-xs font-bold text-slate-500 uppercase">Active Weddings</span>
+                        <h3 id="rep-active-count" class="text-2xl font-extrabold text-slate-800 mt-1">0</h3>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 9. HALLS VIEW -->
+            <div id="view-halls" class="app-view hidden space-y-4">
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex justify-between items-center">
+                    <h3 class="font-bold text-slate-800 text-sm">Banquet Halls Setup</h3>
+                    <button onclick="openAddHallModal()" class="bg-royal-600 hover:bg-royal-700 text-white font-bold text-xs px-4 py-2 rounded-lg transition">+ Add New Hall</button>
+                </div>
+                <div id="halls-cards-grid" class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <!-- JS populated -->
+                </div>
+            </div>
+
+            <!-- 10. SETTINGS VIEW -->
+            <div id="view-settings" class="app-view hidden">
+                <div class="max-w-2xl mx-auto bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+                    <h3 class="font-bold text-slate-800 text-base border-b border-slate-200 pb-2">Banquet Profile & Invoice Settings</h3>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Banquet Name</label>
+                        <input type="text" id="sett-name" value="Royal Palm Marquee & Banquet" class="w-full text-xs p-2.5 rounded-lg border border-slate-300 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Phone / Contact Details</label>
+                        <input type="text" id="sett-phone" value="+92 42 35710000 | +92 300 8490000" class="w-full text-xs p-2.5 rounded-lg border border-slate-300 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Address Location</label>
+                        <input type="text" id="sett-address" value="Main Boulevard, Gulberg III, Lahore, Pakistan" class="w-full text-xs p-2.5 rounded-lg border border-slate-300 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Terms & Conditions for Invoice</label>
+                        <textarea id="sett-terms" rows="3" class="w-full text-xs p-2.5 rounded-lg border border-slate-300 outline-none">1. Advance payment is non-refundable upon cancellation within 15 days of function. 2. Full remaining payment must be cleared 3 days prior to function date.</textarea>
+                    </div>
+                    <div class="pt-2 flex justify-end">
+                        <button onclick="saveSettings()" class="px-5 py-2.5 text-xs font-bold text-white bg-royal-600 hover:bg-royal-700 rounded-lg shadow">Save Settings</button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- PRINTABLE INVOICE / RECEIPT MODAL -->
+    <div id="receipt-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex justify-center items-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-slate-200">
+            <!-- Modal Bar -->
+            <div class="p-4 bg-slate-100 border-b border-slate-200 flex justify-between items-center no-print">
+                <span class="text-xs font-bold uppercase text-slate-600">Print Booking Agreement / Invoice</span>
+                <div class="space-x-2">
+                    <button onclick="window.print()" class="bg-royal-600 text-white text-xs font-bold px-3.5 py-1.5 rounded-lg hover:bg-royal-700">
+                        <i class="fa-solid fa-print mr-1.5"></i>Print / Save PDF
+                    </button>
+                    <button onclick="closeReceiptModal()" class="bg-slate-300 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-slate-400">Close</button>
+                </div>
+            </div>
+
+            <!-- Printable Body -->
+            <div id="print-section" class="p-8 text-slate-800 text-xs space-y-6">
+                <div class="border-b-2 border-slate-800 pb-4 flex justify-between items-start">
+                    <div>
+                        <h1 id="pr-banquet-title" class="text-xl font-extrabold text-navy-900">ROYAL PALM MARQUEE</h1>
+                        <p class="text-2xs font-semibold text-slate-500 uppercase tracking-widest">Luxury Wedding & Event Venue</p>
+                        <p id="pr-banquet-addr" class="text-xs text-slate-600 mt-1">Main Boulevard, Gulberg III, Lahore</p>
+                        <p id="pr-banquet-phone" class="text-xs text-slate-600">Phone: +92 42 35710000 | +92 300 8490000</p>
+                    </div>
+                    <div class="text-right">
+                        <span class="px-3 py-1 bg-royal-50 text-royal-700 font-bold border border-royal-200 rounded text-xs inline-block">EVENT CONTRACT</span>
+                        <p class="mt-2 text-xs text-slate-500">Booking ID: <strong id="pr-id" class="text-slate-800">#BK-0000</strong></p>
+                        <p class="text-xs text-slate-500">Issue Date: <strong id="pr-date" class="text-slate-800">--</strong></p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <div>
+                        <p class="text-2xs font-bold text-slate-400 uppercase">Customer Details</p>
+                        <p id="pr-cust-name" class="font-bold text-sm text-slate-800 mt-0.5">--</p>
+                        <p id="pr-cust-phone" class="text-slate-600">--</p>
+                        <p id="pr-cust-cnic" class="text-slate-600">--</p>
+                    </div>
+                    <div>
+                        <p class="text-2xs font-bold text-slate-400 uppercase">Event Schedule</p>
+                        <p id="pr-event-type" class="font-bold text-sm text-slate-800 mt-0.5">--</p>
+                        <p id="pr-event-date" class="text-slate-600">--</p>
+                        <p id="pr-event-hall" class="text-slate-600">--</p>
+                    </div>
+                </div>
+
+                <table class="w-full text-left border-collapse border border-slate-200">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                            <th class="p-2.5">Description</th>
+                            <th class="p-2.5 text-right">Details</th>
+                            <th class="p-2.5 text-right">Amount (PKR)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pr-table-body" class="divide-y divide-slate-200">
+                        <!-- JS populated -->
+                    </tbody>
+                </table>
+
+                <div class="bg-slate-50 p-3 rounded border border-slate-200 text-2xs text-slate-500 space-y-1">
+                    <p class="font-bold text-slate-700 uppercase">Terms & Conditions:</p>
+                    <p id="pr-terms-text">1. Advance payment is non-refundable upon cancellation. 2. Remaining payment must be cleared before event start.</p>
+                </div>
+
+                <div class="pt-8 flex justify-between items-center text-xs">
+                    <div class="text-center border-t border-slate-400 w-36 pt-1">
+                        <p class="font-semibold text-slate-700">Customer Signature</p>
+                    </div>
+                    <div class="text-center border-t border-slate-400 w-36 pt-1">
+                        <p class="font-semibold text-slate-700">Banquet Manager</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RECORD PAYMENT MODAL -->
+    <div id="payment-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex justify-center items-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-200 space-y-4">
+            <h3 class="font-bold text-slate-800 text-base">Record Payment Installment</h3>
+            <form id="pay-modal-form" onsubmit="handlePaymentModalSubmit(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Select Booking ID *</label>
+                    <select id="pm-booking-id" required class="w-full text-xs p-2.5 rounded-lg border border-slate-300 outline-none bg-white">
+                        <!-- JS populated -->
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Payment Amount (PKR) *</label>
+                    <input type="number" id="pm-amount" required min="1" class="w-full text-xs p-2.5 rounded-lg border border-slate-300 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Payment Method</label>
+                    <select id="pm-method" class="w-full text-xs p-2.5 rounded-lg border border-slate-300 outline-none bg-white">
+                        <option value="Cash">Cash</option>
+                        <option value="Bank Transfer">Bank Transfer</option>
+                        <option value="JazzCash">JazzCash</option>
+                        <option value="Easypaisa">Easypaisa</option>
+                        <option value="Cheque">Cheque</option>
+                    </select>
+                </div>
+                <div class="flex justify-end space-x-2 pt-3">
+                    <button type="button" onclick="closePaymentModal()" class="px-4 py-2 text-xs font-bold border border-slate-300 rounded-lg text-slate-600">Cancel</button>
+                    <button type="submit" class="px-4 py-2 text-xs font-bold bg-royal-600 text-white rounded-lg hover:bg-royal-700">Save Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ADD HALL MODAL -->
+    <div id="add-hall-modal" class="fixed inset-0 bg-slate-900/60 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-5 space-y-4">
+            <div class="flex items-center justify-between gap-3">
+                <h3 class="font-bold text-slate-800 text-base">Add New Hall</h3>
+                <button type="button" onclick="closeAddHallModal()" class="text-slate-500 hover:text-slate-800" aria-label="Close"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form id="add-hall-form" onsubmit="handleAddHallSubmit(event)" class="space-y-3">
+                <div><label for="hall-name" class="block text-xs font-bold mb-1">Hall Name *</label><input id="hall-name" required maxlength="80" class="w-full p-2.5 text-sm rounded-lg border border-slate-300" placeholder="e.g. Rose Garden Hall"></div>
+                <div><label for="hall-capacity" class="block text-xs font-bold mb-1">Guest Capacity *</label><input id="hall-capacity" required type="number" min="1" max="100000" class="w-full p-2.5 text-sm rounded-lg border border-slate-300" placeholder="e.g. 500"></div>
+                <div><label for="hall-rent" class="block text-xs font-bold mb-1">Base Rent *</label><input id="hall-rent" required type="number" min="0" class="w-full p-2.5 text-sm rounded-lg border border-slate-300" placeholder="e.g. 50000"></div>
+                <div class="flex justify-end gap-2 pt-2"><button type="button" onclick="closeAddHallModal()" class="px-4 py-2 text-sm rounded-lg border border-slate-300">Cancel</button><button type="submit" class="px-4 py-2 text-sm rounded-lg bg-royal-600 text-white font-bold">Save Hall</button></div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function toggleMobileNav() {
+            const nav = document.getElementById('main-nav');
+            nav.classList.toggle('hidden');
+            nav.classList.toggle('block');
+        }
+
+        // Storage Keys & Core Defaults
+        const KEY_BOOKINGS = 'rpb_bookings_v3';
+        const KEY_HALLS = 'rpb_halls_v3';
+        const KEY_PAYMENTS = 'rpb_payments_v3';
+        const KEY_SETTINGS = 'rpb_settings_v3';
+
+        const DEFAULT_HALLS = [
+            { id: 'H1', name: 'Royal Crystal Ballroom', capacity: 800, baseRent: 75000 },
+            { id: 'H2', name: 'Imperial Emerald Hall', capacity: 450, baseRent: 50000 },
+            { id: 'H3', name: 'Jasmine Executive Marquee', capacity: 300, baseRent: 35000 }
+        ];
+
+        const DEFAULT_BOOKINGS = [
+            {
+                id: 'BK-1001',
+                customerName: 'Chaudhry Usman',
+                customerPhone: '0300-8451234',
+                customerCnic: '35202-1234567-3',
+                customerAddress: 'Gulberg III, Lahore',
+                eventType: 'Barat',
+                hallId: 'H1',
+                hallName: 'Royal Crystal Ballroom',
+                date: '2026-10-24',
+                shift: 'Night / Dinner (07:00 PM - 11:00 PM)',
+                guests: 600,
+                menu: 'Mutton Biryani, Chicken Korma, Kheer, Naan',
+                hallRent: 75000,
+                perHeadRate: 1600,
+                decorCharges: 40000,
+                taxRate: 5,
+                totalAmount: 1128750,
+                advancePaid: 400000,
+                status: 'Confirmed'
+            },
+            {
+                id: 'BK-1002',
+                customerName: 'Mian Hamza',
+                customerPhone: '0321-9876543',
+                customerCnic: '42101-7654321-1',
+                customerAddress: 'DHA Phase 6, Lahore',
+                eventType: 'Walima',
+                hallId: 'H2',
+                hallName: 'Imperial Emerald Hall',
+                date: '2026-10-28',
+                shift: 'Day / Lunch (12:00 PM - 04:00 PM)',
+                guests: 350,
+                menu: 'Chicken Biryani, Seekh Kebab, Naan, Custard',
+                hallRent: 50000,
+                perHeadRate: 1300,
+                decorCharges: 30000,
+                taxRate: 5,
+                totalAmount: 561750,
+                advancePaid: 200000,
+                status: 'Confirmed'
+            }
+        ];
+
+        const DEFAULT_PAYMENTS = [
+            { id: 'TXN-501', bookingId: 'BK-1001', customerName: 'Chaudhry Usman', date: '2026-10-01', amount: 400000, method: 'Bank Transfer' },
+            { id: 'TXN-502', bookingId: 'BK-1002', customerName: 'Mian Hamza', date: '2026-10-05', amount: 200000, method: 'JazzCash' }
+        ];
+
+        const DEFAULT_SETTINGS = {
+            name: 'Royal Palm Marquee & Banquet',
+            phone: '+92 42 35710000 | +92 300 8490000',
+            address: 'Main Boulevard, Gulberg III, Lahore, Pakistan',
+            terms: '1. Advance payment is non-refundable upon cancellation within 15 days of function.\n2. Full remaining payment must be cleared 3 days prior to function date.'
+        };
+
+        let bookings = JSON.parse(localStorage.getItem(KEY_BOOKINGS)) || DEFAULT_BOOKINGS;
+        let halls = JSON.parse(localStorage.getItem(KEY_HALLS)) || DEFAULT_HALLS;
+        let payments = JSON.parse(localStorage.getItem(KEY_PAYMENTS)) || DEFAULT_PAYMENTS;
+        let settings = JSON.parse(localStorage.getItem(KEY_SETTINGS)) || DEFAULT_SETTINGS;
+
+        let calendar = null;
+        let revChart = null;
+        let typeChart = null;
+
+        function persistData() {
+            localStorage.setItem(KEY_BOOKINGS, JSON.stringify(bookings));
+            localStorage.setItem(KEY_HALLS, JSON.stringify(halls));
+            localStorage.setItem(KEY_PAYMENTS, JSON.stringify(payments));
+            localStorage.setItem(KEY_SETTINGS, JSON.stringify(settings));
+        }
+
+        // Navigation Switcher
+        function switchView(viewId) {
+            document.querySelectorAll('.app-view').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`view-${viewId}`).classList.remove('hidden');
+
+            document.querySelectorAll('.sidebar-btn').forEach(btn => btn.classList.remove('sidebar-active'));
+            const activeBtn = document.getElementById(`side-${viewId}`);
+            if (activeBtn) activeBtn.classList.add('sidebar-active');
+
+            const titleMap = {
+                'dashboard': 'Dashboard Overview',
+                'calendar': 'Booking Calendar',
+                'new-booking': 'New Booking Registration',
+                'all-bookings': 'All Registered Bookings',
+                'customers': 'Customer Directory',
+                'payments': 'Payments & Ledger',
+                'events': 'Scheduled Events',
+                'reports': 'Financial Reports',
+                'halls': 'Hall Configurations',
+                'settings': 'System Settings'
+            };
+            document.getElementById('view-title').innerText = titleMap[viewId] || 'Dashboard';
+
+            if (viewId === 'dashboard') updateDashboard();
+            if (viewId === 'calendar') setTimeout(renderCalendarView, 100);
+            if (viewId === 'all-bookings') renderAllBookingsTable();
+            if (viewId === 'customers') renderCustomersView();
+            if (viewId === 'payments') renderPaymentsView();
+            if (viewId === 'events') renderEventsCards();
+            if (viewId === 'reports') renderReportsView();
+            if (viewId === 'halls') renderHallsView();
+        }
+
+        // New Booking Form Auto-Calculations
+        function calculateNewBookingTotals() {
+            const hallId = document.getElementById('nb-hall-id').value;
+            const hallObj = halls.find(h => h.id === hallId);
+            
+            if (hallObj && !document.getElementById('nb-rent').dataset.userModified) {
+                document.getElementById('nb-rent').value = hallObj.baseRent;
+            }
+
+            const guests = parseFloat(document.getElementById('nb-guests').value) || 0;
+            const perHead = parseFloat(document.getElementById('nb-per-head').value) || 0;
+            const rent = parseFloat(document.getElementById('nb-rent').value) || 0;
+            const decor = parseFloat(document.getElementById('nb-decor').value) || 0;
+            const taxRate = parseFloat(document.getElementById('nb-tax-rate').value) || 0;
+            const advance = parseFloat(document.getElementById('nb-advance').value) || 0;
+
+            const foodTotal = guests * perHead;
+            const subtotal = foodTotal + rent + decor;
+            const taxAmt = subtotal * (taxRate / 100);
+            const grandTotal = subtotal + taxAmt;
+            const balance = grandTotal - advance;
+
+            document.getElementById('nb-sum-food').innerText = `Rs. ${foodTotal.toLocaleString()}`;
+            document.getElementById('nb-sum-tax').innerText = `Rs. ${taxAmt.toLocaleString()}`;
+            document.getElementById('nb-sum-total').innerText = `Rs. ${grandTotal.toLocaleString()}`;
+            document.getElementById('nb-sum-balance').innerText = `Rs. ${balance.toLocaleString()}`;
+        }
+
+        function populateHallsDropdown() {
+            const select = document.getElementById('nb-hall-id');
+            select.innerHTML = '';
+            halls.forEach(h => {
+                const opt = document.createElement('option');
+                opt.value = h.id;
+                opt.textContent = `${h.name} (Cap: ${h.capacity})`;
+                select.appendChild(opt);
+            });
+        }
+
+        function handleNewBookingSubmit(e) {
+            e.preventDefault();
+
+            const hallId = document.getElementById('nb-hall-id').value;
+            const hallObj = halls.find(h => h.id === hallId);
+            const date = document.getElementById('nb-event-date').value;
+            const shift = document.getElementById('nb-shift').value;
+
+            if (!hallObj) {
+                alert('Please add or select a valid hall first.');
+                return;
+            }
+            const guestsRequested = Number(document.getElementById('nb-guests').value) || 0;
+            if (guestsRequested > Number(hallObj.capacity)) {
+                alert(`This hall can accommodate up to ${hallObj.capacity} guests. Please choose a larger hall or reduce the guest count.`);
+                return;
+            }
+            if (!date || date < new Date().toISOString().split('T')[0]) {
+                alert('Please select today or a future date.');
+                return;
+            }
+
+            // Conflict Guard
+            const conflict = bookings.find(b => b.date === date && b.hallId === hallId && b.shift === shift && b.status !== 'Cancelled');
+            if (conflict) {
+                alert(`Conflict Warning: ${hallObj.name} is already booked for ${shift} on ${date}!`);
+                return;
+            }
+
+            const guests = parseFloat(document.getElementById('nb-guests').value) || 0;
+            const perHead = parseFloat(document.getElementById('nb-per-head').value) || 0;
+            const rent = parseFloat(document.getElementById('nb-rent').value) || 0;
+            const decor = parseFloat(document.getElementById('nb-decor').value) || 0;
+            const taxRate = parseFloat(document.getElementById('nb-tax-rate').value) || 0;
+            const advance = parseFloat(document.getElementById('nb-advance').value) || 0;
+
+            const grandTotal = ((guests * perHead) + rent + decor) * (1 + (taxRate / 100));
+
+            const newBk = {
+                id: 'BK-' + Date.now(),
+                customerName: document.getElementById('nb-cust-name').value,
+                customerPhone: document.getElementById('nb-cust-phone').value,
+                customerCnic: document.getElementById('nb-cust-cnic').value,
+                customerAddress: document.getElementById('nb-cust-address').value,
+                eventType: document.getElementById('nb-event-type').value,
+                hallId: hallId,
+                hallName: hallObj ? hallObj.name : 'Main Hall',
+                date: date,
+                shift: shift,
+                guests: guests,
+                menu: document.getElementById('nb-menu-desc').value,
+                hallRent: rent,
+                perHeadRate: perHead,
+                decorCharges: decor,
+                taxRate: taxRate,
+                totalAmount: grandTotal,
+                advancePaid: advance,
+                status: 'Confirmed'
+            };
+
+            bookings.unshift(newBk);
+
+            if (advance > 0) {
+                payments.unshift({
+                    id: 'TXN-' + Math.floor(100 + Math.random() * 900),
+                    bookingId: newBk.id,
+                    customerName: newBk.customerName,
+                    date: date,
+                    amount: advance,
+                    method: document.getElementById('nb-payment-method').value
+                });
+            }
+
+            persistData();
+            document.getElementById('new-booking-form').reset();
+            alert(`Booking ${newBk.id} successfully created!`);
+            switchView('all-bookings');
+        }
+
+        function updateDashboard() {
+            document.getElementById('stat-total-bk').innerText = bookings.filter(b => b.status !== 'Cancelled').length;
+            document.getElementById('stat-upcoming-bk').innerText = bookings.filter(b => b.status === 'Confirmed').length;
+
+            const totalRev = bookings.reduce((acc, b) => acc + (b.status !== 'Cancelled' ? b.totalAmount : 0), 0);
+            const totalPaid = payments.reduce((acc, p) => acc + p.amount, 0);
+
+            document.getElementById('stat-total-rev').innerText = `Rs. ${totalRev.toLocaleString()}`;
+            document.getElementById('stat-pending-bal').innerText = `Rs. ${(totalRev - totalPaid).toLocaleString()}`;
+
+            // Recent Table
+            const tbody = document.getElementById('dash-recent-table');
+            tbody.innerHTML = '';
+            bookings.slice(0, 5).forEach(b => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition';
+                tr.innerHTML = `
+                    <td class="p-3 pl-5 font-bold text-royal-600">${b.id}</td>
+                    <td class="p-3 font-semibold">${b.customerName}<br><span class="text-2xs text-slate-400 font-normal">${b.customerPhone}</span></td>
+                    <td class="p-3"><strong class="text-slate-800">${b.eventType}</strong><br><span class="text-2xs text-slate-500">${b.hallName}</span></td>
+                    <td class="p-3">${b.date}</td>
+                    <td class="p-3">${b.guests}</td>
+                    <td class="p-3 font-bold text-slate-800">Rs. ${b.totalAmount.toLocaleString()}</td>
+                    <td class="p-3"><span class="px-2 py-0.5 rounded text-2xs font-bold ${b.status === 'Confirmed' ? 'bg-emerald-100 text-emerald-800' : 'bg-amberGold-100 text-amberGold-800'}">${b.status}</span></td>
+                    <td class="p-3 text-right pr-5">
+                        <button onclick="openReceiptModal('${b.id}')" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded font-bold text-slate-700">Receipt</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            renderCharts();
+        }
+
+        function renderCharts() {
+            if (revChart) revChart.destroy();
+            if (typeChart) typeChart.destroy();
+
+            const ctxRev = document.getElementById('dash-chart-revenue').getContext('2d');
+            revChart = new Chart(ctxRev, {
+                type: 'bar',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                    datasets: [{
+                        label: 'Revenue (PKR)',
+                        data: [600000, 750000, 900000, 400000, 1100000, 1300000, 950000, 1000000, 1200000, 1600000, 0, 0],
+                        backgroundColor: '#2563eb',
+                        borderRadius: 6
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+            });
+
+            const ctxType = document.getElementById('dash-chart-types').getContext('2d');
+            typeChart = new Chart(ctxType, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Barat', 'Walima', 'Mehndi', 'Engagement', 'Others'],
+                    datasets: [{
+                        data: [45, 30, 15, 7, 3],
+                        backgroundColor: ['#2563eb', '#d97706', '#10b981', '#06b6d4', '#64748b']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+
+        function renderCalendarView() {
+            const calendarEl = document.getElementById('calendar-element');
+            if (calendar) calendar.destroy();
+
+            const events = bookings.filter(b => b.status !== 'Cancelled').map(b => ({
+                id: b.id,
+                title: `${b.eventType} - ${b.customerName} (${b.hallName})`,
+                start: b.date,
+                backgroundColor: b.hallId === 'H1' ? '#2563eb' : b.hallId === 'H2' ? '#d97706' : '#10b981'
+            }));
+
+            calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,listWeek'
+                },
+                events: events,
+                eventClick: function(info) {
+                    openReceiptModal(info.event.id);
+                }
+            });
+            calendar.render();
+        }
+
+        function renderAllBookingsTable() {
+            const search = document.getElementById('ab-search').value.toLowerCase();
+            const statusFilter = document.getElementById('ab-status-filter').value;
+            const tbody = document.getElementById('all-bookings-table-body');
+            tbody.innerHTML = '';
+
+            const filtered = bookings.filter(b => {
+                const mSearch = b.customerName.toLowerCase().includes(search) || b.id.toLowerCase().includes(search);
+                const mStatus = statusFilter === 'All' || b.status === statusFilter;
+                return mSearch && mStatus;
+            });
+
+            filtered.forEach(b => {
+                const totalPaid = payments.filter(p => p.bookingId === b.id).reduce((acc, p) => acc + p.amount, 0);
+                const bal = b.totalAmount - totalPaid;
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition';
+                tr.innerHTML = `
+                    <td class="p-3 pl-5 font-bold text-royal-600">${b.id}</td>
+                    <td class="p-3 font-semibold text-slate-800">${b.customerName}<br><span class="text-2xs text-slate-400 font-normal">${b.customerPhone}</span></td>
+                    <td class="p-3"><strong class="text-slate-800">${b.eventType}</strong><br><span class="text-2xs text-slate-500">${b.hallName}</span></td>
+                    <td class="p-3">${b.date}<br><span class="text-2xs text-slate-400">${b.shift}</span></td>
+                    <td class="p-3 font-bold text-slate-800">Rs. ${b.totalAmount.toLocaleString()}</td>
+                    <td class="p-3 text-emerald-700 font-semibold">Rs. ${totalPaid.toLocaleString()}</td>
+                    <td class="p-3 text-amberGold-700 font-semibold">Rs. ${bal.toLocaleString()}</td>
+                    <td class="p-3"><span class="px-2 py-0.5 rounded text-2xs font-bold ${b.status === 'Confirmed' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'}">${b.status}</span></td>
+                    <td class="p-3 text-right pr-5">
+                        <button onclick="openReceiptModal('${b.id}')" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded font-bold text-slate-700">Print Slip</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderCustomersView() {
+            const search = document.getElementById('cust-search').value.toLowerCase();
+            const tbody = document.getElementById('customers-table-body');
+            tbody.innerHTML = '';
+
+            const list = [];
+            bookings.forEach(b => {
+                if (!list.some(c => c.phone === b.customerPhone)) {
+                    list.push({
+                        name: b.customerName,
+                        phone: b.customerPhone,
+                        cnic: b.customerCnic || 'N/A',
+                        address: b.customerAddress || 'Lahore',
+                        count: bookings.filter(x => x.customerPhone === b.customerPhone).length
+                    });
+                }
+            });
+
+            list.filter(c => c.name.toLowerCase().includes(search) || c.phone.includes(search)).forEach(c => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition';
+                tr.innerHTML = `
+                    <td class="p-3.5 pl-5 font-bold text-slate-800">${c.name}</td>
+                    <td class="p-3.5 text-slate-600">${c.phone}</td>
+                    <td class="p-3.5 text-slate-600">${c.cnic}</td>
+                    <td class="p-3.5 text-slate-600">${c.address}</td>
+                    <td class="p-3.5 font-bold text-royal-600">${c.count} Bookings</td>
+                    <td class="p-3.5 text-right pr-5"><button class="px-2.5 py-1 bg-royal-50 text-royal-700 rounded font-bold">Details</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderPaymentsView() {
+            const tbody = document.getElementById('payments-table-body');
+            tbody.innerHTML = '';
+
+            payments.forEach(p => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 transition';
+                tr.innerHTML = `
+                    <td class="p-3.5 pl-5 font-bold text-slate-800">${p.id}</td>
+                    <td class="p-3.5 font-bold text-royal-600">${p.bookingId}</td>
+                    <td class="p-3.5 font-semibold text-slate-800">${p.customerName}</td>
+                    <td class="p-3.5 text-slate-600">${p.date}</td>
+                    <td class="p-3.5"><span class="px-2 py-0.5 bg-slate-100 rounded text-2xs font-semibold">${p.method}</span></td>
+                    <td class="p-3.5 font-bold text-emerald-700">Rs. ${p.amount.toLocaleString()}</td>
+                    <td class="p-3.5 text-right pr-5"><button onclick="openReceiptModal('${p.bookingId}')" class="px-2.5 py-1 bg-slate-100 rounded font-bold text-slate-700">Receipt</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderEventsCards() {
+            const container = document.getElementById('events-cards-grid');
+            container.innerHTML = '';
+
+            bookings.filter(b => b.status !== 'Cancelled').forEach(b => {
+                const card = document.createElement('div');
+                card.className = 'bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2';
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <span class="px-2.5 py-1 rounded bg-royal-50 text-royal-700 font-bold text-2xs">${b.eventType}</span>
+                        <span class="text-xs font-bold text-slate-500">${b.date}</span>
+                    </div>
+                    <h4 class="font-bold text-slate-800 text-sm">${b.customerName}</h4>
+                    <p class="text-xs text-slate-600"><i class="fa-solid fa-building mr-1"></i>${b.hallName}</p>
+                    <p class="text-xs text-slate-600"><i class="fa-solid fa-users mr-1"></i>${b.guests} Guests | ${b.shift}</p>
+                    <div class="pt-2 border-t border-slate-100 flex justify-between items-center text-xs">
+                        <span class="font-bold text-emerald-700">Rs. ${b.totalAmount.toLocaleString()}</span>
+                        <button onclick="openReceiptModal('${b.id}')" class="text-royal-600 font-bold hover:underline">View Agreement</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderReportsView() {
+            const totalRev = bookings.reduce((acc, b) => acc + (b.status !== 'Cancelled' ? b.totalAmount : 0), 0);
+            const totalPaid = payments.reduce((acc, p) => acc + p.amount, 0);
+
+            document.getElementById('rep-collected').innerText = `Rs. ${totalPaid.toLocaleString()}`;
+            document.getElementById('rep-pending').innerText = `Rs. ${(totalRev - totalPaid).toLocaleString()}`;
+            document.getElementById('rep-active-count').innerText = bookings.filter(b => b.status === 'Confirmed').length;
+        }
+
+        function openAddHallModal() {
+            document.getElementById('add-hall-form').reset();
+            const modal = document.getElementById('add-hall-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeAddHallModal() {
+            const modal = document.getElementById('add-hall-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function handleAddHallSubmit(e) {
+            e.preventDefault();
+            const name = document.getElementById('hall-name').value.trim();
+            const capacity = Number(document.getElementById('hall-capacity').value);
+            const baseRent = Number(document.getElementById('hall-rent').value);
+            if (!name || !Number.isFinite(capacity) || capacity < 1 || !Number.isFinite(baseRent) || baseRent < 0) {
+                alert('Please enter valid hall details.');
+                return;
+            }
+            if (halls.some(h => h.name.toLowerCase() === name.toLowerCase())) {
+                alert('A hall with this name already exists.');
+                return;
+            }
+            halls.push({ id: 'H' + Date.now(), name, capacity, baseRent });
+            persistData();
+            populateHallsDropdown();
+            renderHallsView();
+            closeAddHallModal();
+            alert('Hall added successfully. You can now select it in New Booking.');
+        }
+
+        function bookThisHall(hallId) {
+            switchView('new-booking');
+            const select = document.getElementById('nb-hall-id');
+            select.value = hallId;
+            calculateNewBookingTotals();
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+        }
+
+        function renderHallsView() {
+            const grid = document.getElementById('halls-cards-grid');
+            grid.innerHTML = '';
+
+            halls.forEach(h => {
+                const card = document.createElement('div');
+                card.className = 'bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-2';
+                card.innerHTML = `
+                    <h4 class="font-bold text-slate-800 text-base break-words">${escapeHtml(h.name)}</h4>
+                    <p class="text-xs text-slate-600">Guest Capacity: <strong class="text-slate-800">${h.capacity} Persons</strong></p>
+                    <p class="text-xs text-slate-600">Base Rental Rate: <strong class="text-royal-600">Rs. ${Number(h.baseRent).toLocaleString()}</strong></p>
+                    <p class="text-xs text-slate-500">${bookings.filter(b => b.hallId === h.id && b.status !== 'Cancelled').length} non-cancelled booking(s)</p>
+                    <button type="button" onclick="bookThisHall('${h.id}')" class="mt-2 px-3 py-2 rounded-lg bg-royal-600 text-white text-xs font-bold">Book This Hall</button>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function openReceiptModal(bookingId) {
+            const b = bookings.find(x => x.id === bookingId);
+            if (!b) return;
+
+            document.getElementById('pr-banquet-title').innerText = settings.name.toUpperCase();
+            document.getElementById('pr-banquet-addr').innerText = settings.address;
+            document.getElementById('pr-banquet-phone').innerText = `Phone: ${settings.phone}`;
+
+            document.getElementById('pr-id').innerText = b.id;
+            document.getElementById('pr-date').innerText = new Date().toLocaleDateString();
+            document.getElementById('pr-cust-name').innerText = b.customerName;
+            document.getElementById('pr-cust-phone').innerText = `Phone: ${b.customerPhone}`;
+            document.getElementById('pr-cust-cnic').innerText = `CNIC: ${b.customerCnic || 'N/A'}`;
+
+            document.getElementById('pr-event-type').innerText = `${b.eventType} Function`;
+            document.getElementById('pr-event-date').innerText = `Date: ${b.date} (${b.shift})`;
+            document.getElementById('pr-event-hall').innerText = `Hall: ${b.hallName}`;
+
+            const foodTotal = b.guests * b.perHeadRate;
+            const taxAmt = ((foodTotal + b.hallRent + b.decorCharges) * (b.taxRate / 100));
+
+            document.getElementById('pr-table-body').innerHTML = `
+                <tr><td class="p-2.5">Hall Base Rent</td><td class="p-2.5 text-right">Fixed</td><td class="p-2.5 text-right font-semibold">Rs. ${b.hallRent.toLocaleString()}</td></tr>
+                <tr><td class="p-2.5">Menu Catering (${b.menu})</td><td class="p-2.5 text-right">${b.guests} Persons @ Rs. ${b.perHeadRate}</td><td class="p-2.5 text-right font-semibold">Rs. ${foodTotal.toLocaleString()}</td></tr>
+                <tr><td class="p-2.5">Stage & Decor Setup</td><td class="p-2.5 text-right">Fixed</td><td class="p-2.5 text-right font-semibold">Rs. ${b.decorCharges.toLocaleString()}</td></tr>
+                <tr><td class="p-2.5">Tax / Service Charge</td><td class="p-2.5 text-right">${b.taxRate}%</td><td class="p-2.5 text-right font-semibold">Rs. ${taxAmt.toLocaleString()}</td></tr>
+                <tr class="bg-slate-100 font-bold border-t-2 border-slate-300"><td class="p-2.5" colspan="2">Total Contract Value</td><td class="p-2.5 text-right text-royal-700">Rs. ${b.totalAmount.toLocaleString()}</td></tr>
+                <tr class="text-emerald-700 font-semibold"><td class="p-2.5" colspan="2">Advance Payment Paid</td><td class="p-2.5 text-right">Rs. ${b.advancePaid.toLocaleString()}</td></tr>
+                <tr class="text-amberGold-700 font-bold"><td class="p-2.5" colspan="2">Remaining Payable Balance</td><td class="p-2.5 text-right">Rs. ${(b.totalAmount - b.advancePaid).toLocaleString()}</td></tr>
+            `;
+
+            document.getElementById('pr-terms-text').innerText = settings.terms;
+            document.getElementById('receipt-modal').classList.remove('hidden');
+        }
+
+        function closeReceiptModal() {
+            document.getElementById('receipt-modal').classList.add('hidden');
+        }
+
+        function openPaymentModal() {
+            const select = document.getElementById('pm-booking-id');
+            select.innerHTML = '';
+            bookings.filter(b => b.status !== 'Cancelled').forEach(b => {
+                const opt = document.createElement('option');
+                opt.value = b.id;
+                opt.textContent = `${b.id} - ${b.customerName} (${b.eventType})`;
+                select.appendChild(opt);
+            });
+            document.getElementById('payment-modal').classList.remove('hidden');
+        }
+
+        function closePaymentModal() {
+            document.getElementById('payment-modal').classList.add('hidden');
+        }
+
+        function handlePaymentModalSubmit(e) {
+            e.preventDefault();
+            const bookingId = document.getElementById('pm-booking-id').value;
+            const amount = parseFloat(document.getElementById('pm-amount').value) || 0;
+            const method = document.getElementById('pm-method').value;
+
+            const b = bookings.find(x => x.id === bookingId);
+            if (!b) return;
+
+            payments.unshift({
+                id: 'TXN-' + Math.floor(100 + Math.random() * 900),
+                bookingId: bookingId,
+                customerName: b.customerName,
+                date: new Date().toISOString().split('T')[0],
+                amount: amount,
+                method: method
+            });
+
+            b.advancePaid += amount;
+            persistData();
+            closePaymentModal();
+            renderPaymentsView();
+            alert('Payment installment logged!');
+        }
+
+        function exportCSVReport() {
+            let csv = 'Booking ID,Customer Name,Phone,Event,Hall,Date,Total Amount,Paid Advance,Status\n';
+            bookings.forEach(b => {
+                csv += `"${b.id}","${b.customerName}","${b.customerPhone}","${b.eventType}","${b.hallName}","${b.date}",${b.totalAmount},${b.advancePaid},"${b.status}"\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', 'Banquet_Bookings_Report.csv');
+            a.click();
+        }
+
+        function saveSettings() {
+            settings.name = document.getElementById('sett-name').value;
+            settings.phone = document.getElementById('sett-phone').value;
+            settings.address = document.getElementById('sett-address').value;
+            settings.terms = document.getElementById('sett-terms').value;
+            persistData();
+            document.getElementById('app-settings-title').innerText = settings.name;
+            alert('Settings saved!');
+        }
+
+        // Initialization
+        window.onload = function() {
+            populateHallsDropdown();
+            calculateNewBookingTotals();
+            switchView('dashboard');
+        };
+    </script>
+</body>
+</html>
